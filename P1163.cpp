@@ -1,25 +1,19 @@
 #include<bits/stdc++.h>
 using namespace std;
-int w0,w;
+double w0,w;
 double m;
 int main()
 {
     cin>>w0>>w>>m;
-    double p=(w*m)/w0;
-    double l=0,r=3;
-    while (r-l>1e-9)
+    double l=0,r=10;       
+    while (r-l>1e-4)
     {
         double mid=(l+r)/2;
-        double temp=1;
         double sum=0;
-        for(int i=0;i<m;i++){
-            sum+=(mid+1)*temp*(1/m);
-            temp=(mid+1)*temp;
+        if(pow(1.0/(1.0+mid),m)>=1-w0/w*mid){
+            r=mid;
         }
-        if(sum-p<1e-9){
-            l=mid;
-        }
-        else r=mid;
+        else l=mid;
     }
-    printf("%.1lf",r*100);
+    printf("%.1lf",l*100);
 }
