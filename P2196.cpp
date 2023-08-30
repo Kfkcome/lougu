@@ -24,7 +24,7 @@ int main()
         pre[i]=i;
     }
     for(int i=1;i<=N;i++){
-        int maxi=1;
+        int maxi=i;
         for(int j=1;j<=N;j++){
             if(dp[j]>dp[maxi]&&links[j][i]==1){
                 maxi=j;
