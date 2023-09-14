@@ -6,7 +6,7 @@ struct line
     int l;
     int r;
 };
-long dp[2][20001];
+long dp[20001][2];
 struct line lines[20001];
 int main()
 {
@@ -15,33 +15,15 @@ int main()
     {
         cin >> lines[i].l >> lines[i].r;
     }
-    for (int i = 1; i <= n; i++)
+    dp[1][0]=lines[1].r+lines[1].r-lines[1].l-1;
+    dp[1][1]=lines[1].r-1;
+    for (int i = 2; i <= n; i++)
     {
-        for (int j = 1; j <= n; j++)
-        {
-            int maxi;
-            if (j <= lines[i].l)
-            {
-                dp[i % 2][j] = dp[(i - 1) % 2][lines[i].r] + lines[i].r - j;
-            }
-            else if (j >= lines[i].r)
-            {
-                dp[i % 2][j] = dp[(i - 1) % 2][lines[i].l] + j - lines[i].r;
-            }
-            else if (j > lines[i].l && j < lines[i].r)
-            {
-                if (j - lines[i].l < lines[i].r - j)
-                {
-                    dp[i % 2][j] = dp[(i - 1) % 2][lines[i].r] + j - lines[i].l + lines[i].r - lines[i].l;
-                }
-                else
-                {
-                    dp[i % 2][j] = dp[(i - 1) % 2][lines[i].l] + lines[i].r - j + lines[i].r - lines[i].l;
-                }
-            }
-            dp[i % 2][j]++;
-        }
+        int l=lines[i-1].l;
+        int r=lines[i-1].r;
+        dp[i][0]=1+min(dp[i-1][0]+abs(l-lines[i].r)+lines[i].r-lines[i].l,dp[i-1][1]+abs(r-lines[i].r)+lines[i].r-lines[i].l);
+        dp[i][1]=1+min(dp[i-1][0]+abs(l-lines[i].l)+lines[i].r-lines[i].l,dp[i-1][1]+abs(r-lines[i].l)+lines[i].r-lines[i].l);
     }
-    cout << dp[n % 2][n];
+    cout << dp[n][1]+n-lines[n].r;
     return 0;
 }
