@@ -3,34 +3,53 @@ using namespace std;
 int N, M;
 struct point
 {
-    int i, j;
+    int i, j, c;
 };
 char place[301][301];
 map<char, list<struct point> > transit;
 bool path[301][301];
-int min_time;
-int start_i, start_j, end_i, end_j;
-bool dfs(int count, int i, int j)
-{
-    path[i][j] = true;
-    if (place[i][j] == '=')
-    {
-        min_time = min(count, min_time);
-        return true;
-    }
-    if (place[i][j] >= 'A' && place[i][j] <= 'Z')
-    {
+int min_time = 1 << 20;
+int temp[4] = {1, 0, -1, 0};
+int temp2[4] = {0, 1, 0, -1};
+int start_i, start_j;
+queue<point> q;
 
-        list<struct point>::iterator it1 = transit[place[i][j]].begin();
-        for (; it1 != transit[place[i][j]].end(); it1++)
+int bfs()
+{
+    q.push((struct point){start_i, start_j});
+    struct point p;
+    while (!q.empty())
+    {
+        p = q.front();
+        q.pop();
+        if (place[p.i][p.j] == '=')
         {
-            if ((*it1).i != i || (*it1).j != j)
-                dfs(count + 1, (*it1).i, (*it1).j);
+            return p.c;
         }
-        for()
+        if (place[p.i][p.j] >= 'A' && place[p.i][p.j] <= 'Z')
+        {
+            list<struct point>::iterator it1 = transit[place[p.i][p.j]].begin();
+            for (; it1 != transit[place[p.i][p.j]].end(); it1++)
+            {
+                if ((*it1).i != p.i || (*it1).j != p.j)
+                {
+                    p.i = (*it1).i;
+                    p.j = (*it1).j;
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            int x = p.i + temp[i], y = p.j + temp2[i];
+            if (place[x][y] != '#' && !path[x][y] && x >= 1 && x <= N && y >= 1 && y <= M)
+            {
+                path[x][y] = true;
+                q.push((point){x, y, p.c + 1});
+            }
+        }
     }
-    if (!path[i - 1][j])
-        dfs(count + 1, i - 1, j);
+    return -1;
 }
 int main()
 {
@@ -45,19 +64,13 @@ int main()
                 start_i = i;
                 start_j = j;
             }
-            if (place[i][j] == '=')
+            else if (place[i][j] >= 'A' && place[i][j] <= 'Z')
             {
-                end_i = i;
-                end_j = j;
-            }
-            if (place[i][j] >= 'A' && place[i][j] <= 'Z')
-            {
-                struct point p = {i, j};
-                transit[place[i][j]].insert(transit[place[i][j]].end(), p);
+                struct point p = {i, j, 0};
+                transit[place[i][j]].push_back(p);
             }
         }
     }
-    // cout << dfs(0)
-
+    cout << bfs();
     return 0;
 }
