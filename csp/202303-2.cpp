@@ -34,16 +34,21 @@ int main()
         r = max(s[i].t, r);
     }
     int l = k;
-    while (l < r)
+    int res = 0;
+    while (l <= r)
     {
         long long mid = (r + l) / 2;
         if (check(mid))
         {
-            r = mid;
+            res = mid;
+
+            r = mid - 1;
         }
         else
+        {
             l = mid + 1;
+        }
     }
-    cout << l;
+    cout << res;
     return 0;
 }
