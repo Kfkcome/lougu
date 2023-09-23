@@ -5,7 +5,6 @@ struct cheese
 {
     int x, y;
 };
-<<<<<<< HEAD
 struct cheese c[16];
 bool way[16];
 double path[16][16];
@@ -52,24 +51,4 @@ int main()
     dfs(0, 0, 0);
     cout << fixed << setprecision(2) << length_mini;
     return 0;              
-=======
-double path[16][16];
-struct cheese c[16];
-int main()
-{
-    for (int i = 0; i < n; i++)
-    {
-        cin >> c[i].x >> c[i].y;
-    }
-    for (int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            double x1=c[i].x,x2=c[j].x;
-            double y1=c[i].y,y2=c[j].y;
-            path[i][j]=sqrt()
-        }
-    }
-    return 0;
->>>>>>> a4f47ae66adb9b5e862d4629e928ef08431126f9
 }
