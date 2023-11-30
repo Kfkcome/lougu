@@ -1,0 +1,7 @@
+test.exe
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/settings.json
+.vscode/tasks.json
+output/P1002.exe
+output/test.exe
