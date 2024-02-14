@@ -6,16 +6,16 @@ int n, m;
 vector<ll> num;
 struct item // 多项式的项
 {
-    map<int, int> mp;
-    ll coefficient;
-    item(ll coefficient, map<int, int> mp) : coefficient(coefficient), mp(mp) {}
+    map<int, int> mp;                                                            // 变量
+    ll coefficient;                                                              // 系数
+    item(ll coefficient, map<int, int> mp) : coefficient(coefficient), mp(mp) {} // 构造函数
 };
-struct formula
+struct formula // 多项式
 {
-    vector<item> items; // 多项式
-    formula(vector<item> items) : items(items) {}
+    vector<item> items;
+    formula(vector<item> items) : items(items) {} // 构造函数
 };
-int charToInt(string c)
+int charToInt(string c) // 字符串转换为整形
 {
     ll res = 0;
     ll flag = 1;
@@ -28,8 +28,8 @@ int charToInt(string c)
     }
     return res * flag;
 }
-stack<formula> op;
-formula add(formula a, formula b)
+stack<formula> op;                // 存储多项式的栈
+formula add(formula a, formula b) // 多项式相加
 {
     for (int i = 0; i < a.items.size(); i++)
     {
@@ -49,7 +49,7 @@ formula add(formula a, formula b)
     }
     return formula(a.items);
 }
-formula sub(formula a, formula b)
+formula sub(formula a, formula b) // 多项式相减
 {
     for (int i = 0; i < a.items.size(); i++)
     {
@@ -57,7 +57,7 @@ formula sub(formula a, formula b)
     }
     return add(a, b);
 }
-formula mul(formula a, formula b)
+formula mul(formula a, formula b) // 多项式相乘
 {
     formula res(vector<item>{});
     for (int i = 0; i < a.items.size(); i++)
@@ -75,7 +75,7 @@ formula mul(formula a, formula b)
     }
     return res;
 }
-formula derivate(formula a, int x)
+formula derivate(formula a, int x) // 求导
 {
     vector<item> res;
     for (int i = 0; i < a.items.size(); i++)
@@ -94,7 +94,7 @@ formula derivate(formula a, int x)
     }
     return formula(res);
 }
-int getRes(formula a, vector<ll> num)
+int getRes(formula a, vector<ll> num) // 带入变量的值
 {
     ll res = 0;
     for (int i = 0; i < a.items.size(); i++)
@@ -149,8 +149,9 @@ int main()
         {
             if (temp[0] == 'x')
             {
-                int cofficient = temp[1] - '0';
+                string number = string(temp.begin() + 1, temp.end());
                 map<int, int> mp;
+                int cofficient=charToInt(number);
                 mp[cofficient] = 1;
                 item it(1, mp);
                 formula f(vector<item>{it});
@@ -174,7 +175,7 @@ int main()
         cin >> id;
         formula temp = derivate(full, id);
         ll value;
-        num.push_back(0);
+        num.push_back(0); // 变量的编号从1开始
         for (int j = 1; j <= n; j++)
         {
             cin >> value;
@@ -188,4 +189,5 @@ int main()
         num.clear();
         cout << result << endl;
     }
+    return 0;
 }

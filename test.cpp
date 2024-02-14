@@ -3,11 +3,7 @@ using namespace std;
 long long mod = 1e9 + 7;
 int main()
 {
-    cout << mod << endl;
-
-    long long a = -10000000000;
-    long long temp=a%mod;
-    if(temp<0){
-        cout<<temp+mod;
-    }
+    string temp="x1234";
+    string temp2=string(temp.begin()+1,temp.end());
+    cout<<temp2;
 }
