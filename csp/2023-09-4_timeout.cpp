@@ -105,6 +105,7 @@ int main()
     ll sum = 0;
     for (int i = 1; i <= p; i++)
     {
+        // cout<<x[i]<<' '<<y[i]<<endl;
         sum = sum ^ (i * x[i] + y[i]);
     }
     cout << sum;
