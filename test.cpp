@@ -35,4 +35,8 @@ int main()
         cout << it.x << ' ' << it.y << ' ' << endl;
     }
     cout << temp2;
+
+    cout << "_______________________" << endl;
+    string a = "hallo";
+    cout << string(a.begin(), a.begin() + 1);
 }
