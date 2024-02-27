@@ -41,7 +41,6 @@ int main()
         if (check(mid))
         {
             res = mid;
-
             r = mid - 1;
         }
         else
