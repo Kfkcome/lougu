@@ -36,7 +36,7 @@ void solveBase(vector<int> &t, string temp)
         }
     }
 }
-void solveEasy(vector<int> &t, string temp)
+void solveExpr(vector<int> &t, string temp)
 {
     int logic; // 如果是 &与 则为0  如果是 |或 则为1
     if (temp[0] == '&')
@@ -49,18 +49,34 @@ void solveEasy(vector<int> &t, string temp)
         return;
     }
     int position[4]; // 记录四个括号符号的位置
-    int top = 0;
-    for (int i = 0; i < temp.size(); i++)
+    position[0] = 1;
+    stack<int> pos;
+    // 匹配括号的位置
+    for (int i = 2; i < temp.size(); i++)
     {
-        if (temp[i] == '(' || temp[i] == ')')
+        if (temp[i] == '(')
         {
-            position[top++] = i;
+            pos.push(i);
+        }
+        if (temp[i] == ')')
+        {
+            if (!pos.empty())
+            {
+                pos.pop();
+            }
+            else
+            {
+                position[1] = i;
+                position[2] = i + 1;
+                position[3] = temp.size() - 1;
+                break;
+            }
         }
     }
     vector<int> t1;
-    solveBase(t1, string(temp.begin() + position[0] + 1, temp.begin() + position[1]));
+    solveExpr(t1, string(temp.begin() + position[0] + 1, temp.begin() + position[1]));
     vector<int> t2;
-    solveBase(t2, string(temp.begin() + position[2] + 1, temp.begin() + position[3]));
+    solveExpr(t2, string(temp.begin() + position[2] + 1, temp.begin() + position[3]));
     if (logic == 0)
     {
         for (auto item : t1)
@@ -80,10 +96,6 @@ void solveEasy(vector<int> &t, string temp)
         t.insert(t.end(), t1.begin(), t1.end());
         t.insert(t.end(), t2.begin(), t2.end());
     }
-}
-void solveExpr()
-{
-    
 }
 int main()
 {
@@ -106,8 +118,10 @@ int main()
         vector<int> ans;
         string temp;
         cin >> temp;
-        solveEasy(ans, temp);
-        for (auto item : ans)
+        solveExpr(ans, temp);
+        sort(ans.begin(), ans.end()); // 从小到大排序
+        set<int> ans1(ans.begin(), ans.end());
+        for (auto item : ans1)
         {
             cout << user[item].dn << ' ';
         }
