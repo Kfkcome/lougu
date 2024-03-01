@@ -30,14 +30,14 @@ const bool compareIP(vector<int> a, vector<int> b)
         return 0; // a小于b
 }
 // 用来判断a在b的什么位置
-// 1左边  2 左边有交集 3中间  4右边有交集  5 右边
+// 1左边  2 左边有交集 3中间  4右边有交集  5 右边  6两个区间相等
 int compareRange(struct betw a, struct betw b)
 {
     if (compareIP(a.r, b.l) == 0)
     {
         return 1;
     }
-    else if (compareIP(a.r, b.l) == 1 && compareIP(a.l, b.l) == 0 && compareIP(a.r, b.r) == 0)
+    else if (compareIP(a.r, b.l) == 2 || ((compareIP(a.r, b.l) == 1 || compareIP(a.r, b.l) == 2) && compareIP(a.l, b.l) == 0 && compareIP(a.r, b.r) == 0))
     {
         return 2;
     }
@@ -45,7 +45,7 @@ int compareRange(struct betw a, struct betw b)
     {
         return 3;
     }
-    else if (compareIP(a.r, b.r) == 1 && compareIP(a.l, b.l) == 1 && compareIP(a.l, b.r) == 0)
+    else if (compareIP(a.r, b.r) == 2 || (compareIP(a.r, b.r) == 1 && (compareIP(a.l, b.l) == 1 || compareIP(a.l, b.l) == 2) && compareIP(a.l, b.r) == 0))
     {
         return 4;
     }
@@ -53,6 +53,8 @@ int compareRange(struct betw a, struct betw b)
     {
         return 5;
     }
+    else if (compareIP(a.l, b.l) == 2 && compareIP(a.r, b.r) == 2)
+        return 6;
 }
 vector<struct betw> user;
 int top;
@@ -97,16 +99,35 @@ struct betw convertString(string l, string r, int id)
 }
 bool check(struct betw t) // 检查是否可以占用
 {
+    bool flag = true;
+    int insertTo = -1;
+    // 怎么保证区间之间有交集
     for (int i = 0; i <= user.size(); i++) // 循环遍历每一个范围查看是不是有冲突
     {
         int kind = compareRange(t, user[i]);
-        if (user[i].id == t.id)
+
+        if (user[i].id == t.id) // 如果是同一个用户 只要不是全部分配了就可以分配
         {
+            if (kind == 6) // 如果已经全部被分配了
+            {
+                flag = false;
+            }
+            else if (kind >= 2 && kind <= 5)
+            {
+                insertTo = i;
+            }
         }
         else
         {
+            if (kind != 1 || kind != 5)
+            {
+                flag = false;
+            }
         }
     }
+    if (!flag)
+        return false;
+    compareRange(t, user[insertTo]);
 }
 int main()
 {
