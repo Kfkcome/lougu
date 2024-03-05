@@ -38,5 +38,7 @@ int main()
 
     cout << "_______________________" << endl;
     string a = "hallo";
-    cout << string(a.begin(), a.begin() + 1);
+    cout << string(a.begin(), a.begin() + 1) << endl;
+    int x = 1e9 + 1;
+    cout << x;
 }
