@@ -85,17 +85,54 @@ int main()
         }
     }
     code_word[0] = code_word.size();
-    // 计算校验字
-    // 模拟多项式除法
-    int g[513]; // g(x)的系数
-    int d[930]; // d(x)的系数
-    // 初始化g(x)
-    for (int i = 0; i <= k; i++)
+    if (s != -1)
     {
-        g[i]=
-    }
-    for (int i = 0; i < code_word[0]; i++)
-    {
+        // 计算校验字
+        // 模拟多项式除法
+        vector<int> g; // g(x)的系数
+        vector<int> d; // d(x)的系数
+        // 初始化g(x)
+        g.push_back(-3);
+        g.push_back(1);
+        int three = -9;
+        for (int i = 2; i <= k; i++)
+        {
+            vector<int> temp = g;
+            g.insert(g.begin(), 0);
+            for (int i = 0; i < temp.size(); i++)
+            {
+                g[i] = (temp[i] * three) % 929 + g[i] % 929;
+                g[i] % 929;
+            }
+            three = (three * 3) % 929;
+        }
+        // 初始化d(x)
+        // 乘以x^k
+        for (int i = 0; i < k; i++)
+        {
+            d.push_back(0);
+        }
+        for (int i = code_word.size() - 1; i >= 0; i--)
+        {
+            d.push_back(code_word[i]);
+        }
+        // 模拟多项式除法
+        // 要把dx的每一项都消除为0
+        for (int i = d.size() - 1; i >= k; i--)
+        {
+            int temp = -1 * d[i];
+            d[i] = 0;
+            for (int j = g.size() - 2; j >= 0; j--)
+            {
+                d[i - (g.size() - 1 - j)] = (g[j] * temp) % 929 + d[i - (g.size() - 1 - j)] % 929;
+                d[i - (g.size() - 1 - j)] %= 929;
+            }
+        }
+        for (int i = k - 1; i >= 0; i--)
+        {
+            int temp = (-1 * d[i]) % 929;
+            code_word.push_back(temp >= 0 ? temp : temp + 929);
+        }
     }
     for (int i = 0; i < code_word.size(); i++)
     {
