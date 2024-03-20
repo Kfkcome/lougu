@@ -48,6 +48,5 @@ int main()
         }
     }
     cout << s[max].y;
-
     return 0;
 }
