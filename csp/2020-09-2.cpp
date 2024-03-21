@@ -2,8 +2,8 @@
 using namespace std;
 int n, k, t, xl, yd, xr, yu;
 int stay, stayk;
-int x[21][1001];
-int y[21][1001];
+int x[25][1001];
+int y[25][1001];
 int main()
 {
     ios::sync_with_stdio(false);
