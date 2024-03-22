@@ -1,16 +1,17 @@
 #include <bits/stdc++.h>
 using namespace std;
-struct file
+struct dfile
 {
     long long size;
-    long long dir_size;
-    long long child_size;
-    long long dir_limit;
-    long long child_limit;
+    long long dir_size = 0;
+    long long child_size = 0;
+    long long dir_limit = 0;
+    long long child_limit = 0;
     int type = -1; // 0是普通文件 1是目录文件
-    map<string, struct file *> child;
+    map<string, struct dfile *> child;
+    dfile(int t) : type(t) {}
 };
-struct file root;
+struct dfile root(1);
 vector<string> convert_string_path(string file_path)
 {
     vector<string> res;
@@ -36,8 +37,8 @@ bool deal_creat(string file_path, long long file_size) // 创建普通文件
     vector<string> path = convert_string_path(file_path);
     bool exist = false; // 这个文件是不是已经存在
 
-    struct file *p = &root;
-    vector<struct file *> fs;
+    struct dfile *p = &root;
+    vector<struct dfile *> fs;
     fs.push_back(p);
     bool newdir = false; // 记录有没有新的文件夹产生
     // 检查目录是不是被文件占用
@@ -46,7 +47,7 @@ bool deal_creat(string file_path, long long file_size) // 创建普通文件
         if (p->child.count(path[i]))
         {
             // 找到了文件看看是不是目录
-            struct file *temp = p->child[path[i]];
+            struct dfile *temp = p->child[path[i]];
             if (temp->type == 0) // 如果是普通文件
                 return false;
             p = temp;
@@ -59,7 +60,7 @@ bool deal_creat(string file_path, long long file_size) // 创建普通文件
     // 只有没有新建文件夹的时候才检查
     if (!newdir)
     {
-        struct file *last = fs.back();
+        struct dfile *last = fs.back();
         if (last->child.count(path.back()))
         {
             if (last->child[path.back()]->type == 1)
@@ -67,51 +68,59 @@ bool deal_creat(string file_path, long long file_size) // 创建普通文件
             exist = true;
             fs.push_back(last->child[path.back()]);
         }
+        else
+        {
+            fs.push_back(new dfile(0));
+        }
     }
     // 判断大小限制是不是符合
     long long t_file_size = file_size;
     if (exist)
         t_file_size = file_size - fs.back()->size;
 
-    for (int i = 0; i < fs.size() - 1; i++)
+    for (int i = 0; i < fs.size(); i++)
     {
-        if (fs[i]->child_limit && fs[i]->child_size + t_file_size > fs[i]->child_limit)
+        if (fs[i]->type == 1 && fs[i]->child_limit && fs[i]->child_size + t_file_size > fs[i]->child_limit)
             return false;
-        if (fs[i]->dir_limit && i == fs.size() - 2 && fs[i]->dir_size + t_file_size > fs[i]->dir_limit)
+        if (fs[i]->type == 1 && !newdir && fs[i]->dir_limit && i == fs.size() - 2 && fs[i]->dir_size + t_file_size > fs[i]->dir_limit)
             return false;
     }
 
     // 给路径上的文件夹增加大小
+    fs[0]->child_size += t_file_size;
+    if (path.size() == 1)
+        fs[0]->dir_size += t_file_size;
     for (int i = 0; i < path.size(); i++)
     {
-        if (i >= fs.size()) // 还未创建
+        if (i >= fs.size() - 1) // 还未创建
         {
-            struct file temp;
+            struct dfile *temp = new dfile(1);
             if (i == path.size() - 1)
             {
-                temp.size = file_size;
-                temp.type = 0;
+                temp->size = file_size;
+                temp->type = 0;
             }
             else
             {
-                temp.child_size += t_file_size;
-                temp.dir_size += i == path.size() - 2 ? t_file_size : 0;
-                temp.type = 1;
+                temp->child_size += t_file_size;
+                temp->dir_size += i == path.size() - 2 ? t_file_size : 0;
+                temp->type = 1;
             }
             // 建立索引
-            fs.back()->child[path[i]] = &temp;
-            fs.push_back(&temp);
+            fs.back()->child[path[i]] = temp;
+            fs.push_back(temp);
         }
         else // 如果已经创建了
         {
             if (i == path.size() - 1)
             {
-                fs[i]->size = file_size;
+                fs[i + 1]->size = file_size;
+                fs[i]->child[path[i]] = fs[i + 1];
             }
             else
             {
-                fs[i]->child_size += t_file_size;
-                fs[i]->dir_size += i == path.size() - 2 ? t_file_size : 0;
+                fs[i + 1]->child_size += t_file_size;
+                fs[i + 1]->dir_size += i == path.size() - 2 ? t_file_size : 0;
             }
         }
     }
@@ -120,17 +129,15 @@ bool deal_creat(string file_path, long long file_size) // 创建普通文件
 bool deal_remove(string file_path)
 {
     vector<string> path = convert_string_path(file_path);
-    vector<struct file *> fs;
+    vector<struct dfile *> fs;
     fs.push_back(&root);
 
     // 判断路径存不存在
-    struct file *p = &root;
+    struct dfile *p = &root;
     for (int i = 0; i < path.size(); i++)
     {
         if (!p->child.count(path[i]))
-        {
             return true;
-        }
         p = p->child[path[i]];
         fs.push_back(p);
     }
@@ -161,29 +168,12 @@ bool deal_remove(string file_path)
     }
     return true;
 }
-long long get_sum_size(int dir)
-{
-    vector<long long> temp = paths[f[dir].to_paths];
-    long long sum = 0;
-    for (auto item : temp)
-    {
-        if (f[item].type == 0)
-        {
-            sum += f[item].size;
-        }
-        else if (f[item].type == 1)
-        {
-            sum += get_sum_size(item);
-        }
-    }
-    return sum;
-}
 bool deal_q(string file_path, long long ld, long long lr)
 {
 
     vector<string> path = convert_string_path(file_path);
-    struct file *p = &root;
-    vector<struct file *> fs;
+    struct dfile *p = &root;
+    vector<struct dfile *> fs;
     fs.push_back(p);
     for (int i = 0; i < path.size(); i++)
     {
@@ -194,31 +184,20 @@ bool deal_q(string file_path, long long ld, long long lr)
         p = p->child[path[i]];
         fs.push_back(p);
     }
-    struct file *file = fs.back();
+    struct dfile *dir = fs.back();
     if (ld != 0) // 检查孩子文件的大小是不是超过限制了
     {
-        vector<long long> temp = paths[f[pos].to_paths];
-        long long sum = 0;
-        for (int i = 0; i < temp.size(); i++)
-        {
-            if (f[temp[i]].type == 0)
-            {
-                sum += f[temp[i]].size;
-            }
-        }
-        if (sum > ld)
+        if (dir->dir_size > ld)
             return false;
     }
     if (lr != 0) // 检查后代文件的总和是不是超过了限制
     {
-        long long sum = get_sum_size(pos);
-        if (sum > lr)
+        if (dir->child_size > lr)
             return false;
     }
-    f[pos].child_limit = lr;
-    f[pos].dir_limit = ld;
+    dir->child_limit = lr;
+    dir->dir_limit = ld;
     return true;
-    // f[real_path[real_path.size() - 1]].child_limit
 }
 int main()
 {
@@ -228,10 +207,8 @@ int main()
     int n;
     cin >> n;
     // 初始化根目录
-    f[0].name = "";
-    f[0].type = 1;
-    f[0].to_paths = indexes++;
-    top++;
+    root.type = 1;
+
     for (int i = 0; i < n; i++)
     {
         string type;
