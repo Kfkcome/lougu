@@ -2,139 +2,81 @@
 using namespace std;
 struct dfile
 {
-    long long size;
-    long long dir_size = 0;
-    long long child_size = 0;
-    long long dir_limit = 0;
-    long long child_limit = 0;
-    int type = -1; // 0是普通文件 1是目录文件
+    long long size = 0;
+    long long dir_size = 0;    //
+    long long child_size = 0;  // 后代大小
+    long long dir_limit = 0;   // 目录配额
+    long long child_limit = 0; // 孩子配额
+    bool isDir = 0;            // 1是目录 0是文件
     map<string, struct dfile *> child;
-    dfile(int t) : type(t) {}
+    dfile(int t) : isDir(t) {}
 };
 struct dfile root(1);
-vector<string> convert_string_path(string file_path)
+vector<string> split(const string &s, const string &c = "")
 {
     vector<string> res;
-    string temp = "";
-    for (int i = 1; i < file_path.size(); i++)
+    for (long long i = 0, j = 0; i < s.size(); i = j + 1)
     {
-        if (file_path[i] != '/')
-        {
-            temp += file_path[i];
-        }
-        else
-        {
-            res.push_back(temp);
-            temp.clear();
-        }
+        j = s.find(c, i);
+        if (j == -1)
+            j = s.size();
+        res.push_back(s.substr(i, j - i));
     }
-    if (!temp.empty())
-        res.push_back(temp);
     return res;
 }
-bool deal_creat(string file_path, long long file_size) // 创建普通文件
+int get_file_size(vector<string> path)
 {
-    vector<string> path = convert_string_path(file_path);
-    bool exist = false; // 这个文件是不是已经存在
-
     struct dfile *p = &root;
-    vector<struct dfile *> fs;
-    fs.push_back(p);
-    bool newdir = false; // 记录有没有新的文件夹产生
-    // 检查目录是不是被文件占用
-    for (int i = 0; i < path.size() - 1; i++)
+    for (int i = 1; i < path.size() && p; i++)
     {
-        if (p->child.count(path[i]))
-        {
-            // 找到了文件看看是不是目录
-            struct dfile *temp = p->child[path[i]];
-            if (temp->type == 0) // 如果是普通文件
-                return false;
-            p = temp;
-            fs.push_back(p);
-        }
-        else
-            newdir = true;
+        p = p->child.count(path[i]) ? p->child[path[i]] : nullptr;
     }
-    // 文件名是不是被目录占用
-    // 只有没有新建文件夹的时候才检查
-    if (!newdir)
+    return p and !p->isDir ? p->size : 0;
+}
+bool can_create(vector<string> path, long long sz)
+{
+    struct dfile *p = &root;
+    for (int i = 1; i < path.size() && p; i++)
     {
-        struct dfile *last = fs.back();
-        if (last->child.count(path.back()))
-        {
-            if (last->child[path.back()]->type == 1)
-                return false;
-            exist = true;
-            fs.push_back(last->child[path.back()]);
-        }
-        else
-        {
-            fs.push_back(new dfile(0));
-        }
-    }
-    // 判断大小限制是不是符合
-    long long t_file_size = file_size;
-    if (exist)
-        t_file_size = file_size - fs.back()->size;
-
-    for (int i = 0; i < fs.size(); i++)
-    {
-        if (fs[i]->type == 1 && fs[i]->child_limit && fs[i]->child_size + t_file_size > fs[i]->child_limit)
+        // 向前判断判断i-1的时候的p 不会判断最后一个p（文件的指针）
+        if (!p->isDir or (p->child_limit && p->child_size + sz > p->child_limit) or (i == path.size() - 1 && p->dir_limit && p->dir_size + sz > p->dir_limit))
             return false;
-        if (fs[i]->type == 1 && !newdir && fs[i]->dir_limit && i == fs.size() - 2 && fs[i]->dir_size + t_file_size > fs[i]->dir_limit)
-            return false;
+        p = p->child.count(path[i]) ? p->child[path[i]] : nullptr;
     }
+    return !p or !p->isDir; // 如果没有文件、文件夹占用文件名 或者 是文件占用文件名
+}
+bool deal_creat(vector<string> path, long long file_size) // 创建普通文件
+{
+    int sz = file_size - get_file_size(path);
 
-    // 给路径上的文件夹增加大小
-    fs[0]->child_size += t_file_size;
-    if (path.size() == 1)
-        fs[0]->dir_size += t_file_size;
-    for (int i = 0; i < path.size(); i++)
+    if (!can_create(path, sz))
+        return false;
+    struct dfile *p = &root;
+    for (int i = 1; i < path.size() - 1 /*剩下最后一个是文件*/; i++)
     {
-        if (i >= fs.size() - 1) // 还未创建
-        {
-            struct dfile *temp = new dfile(1);
-            if (i == path.size() - 1)
-            {
-                temp->size = file_size;
-                temp->type = 0;
-            }
-            else
-            {
-                temp->child_size += t_file_size;
-                temp->dir_size += i == path.size() - 2 ? t_file_size : 0;
-                temp->type = 1;
-            }
-            // 建立索引
-            fs.back()->child[path[i]] = temp;
-            fs.push_back(temp);
-        }
-        else // 如果已经创建了
-        {
-            if (i == path.size() - 1)
-            {
-                fs[i + 1]->size = file_size;
-                fs[i]->child[path[i]] = fs[i + 1];
-            }
-            else
-            {
-                fs[i + 1]->child_size += t_file_size;
-                fs[i + 1]->dir_size += i == path.size() - 2 ? t_file_size : 0;
-            }
-        }
+        p->child_size += sz;
+        if (!p->child.count(path[i]))
+            p->child[path[i]] = new dfile(1);
+        p = p->child[path[i]];
     }
+    // p是文件的上一级
+    p->child_size += sz, p->dir_size += sz;
+    // 判断文件是不是存在
+    if (!p->child.count(path.back()))
+        p->child[path.back()] = new dfile(0);
+
+    // 设置大小 注意这里不管是新建的还是覆盖的都是+=sz
+    p->child[path.back()]->size += sz;
     return true;
 }
-bool deal_remove(string file_path)
+bool deal_remove(vector<string> path)
 {
-    vector<string> path = convert_string_path(file_path);
     vector<struct dfile *> fs;
     fs.push_back(&root);
 
     // 判断路径存不存在
     struct dfile *p = &root;
-    for (int i = 0; i < path.size(); i++)
+    for (int i = 1; i < path.size(); i++)
     {
         if (!p->child.count(path[i]))
             return true;
@@ -145,8 +87,8 @@ bool deal_remove(string file_path)
     // 删去索引
     fs[fs.size() - 2]->child.erase(path.back());
     // 删除占用
-    int type = fs.back()->type;
-    if (type == 1) // 如果是文件夹
+    bool type = fs.back()->isDir;
+    if (type) // 如果是文件夹
     {
         // 删除文件夹占用
         long long file_size = fs.back()->child_size;
@@ -168,33 +110,22 @@ bool deal_remove(string file_path)
     }
     return true;
 }
-bool deal_q(string file_path, long long ld, long long lr)
+bool deal_q(vector<string> path, long long ld, long long lr)
 {
-
-    vector<string> path = convert_string_path(file_path);
     struct dfile *p = &root;
-    vector<struct dfile *> fs;
-    fs.push_back(p);
-    for (int i = 0; i < path.size(); i++)
+    for (int i = 1; i < path.size(); i++)
     {
         if (!p->child.count(path[i])) // 如果没有找到
             return false;
-        if (p->child[path[i]]->type == 0) // 如果不是目录文件
+        if (p->child[path[i]]->isDir == 0) // 如果不是目录文件
             return false;
         p = p->child[path[i]];
-        fs.push_back(p);
     }
-    struct dfile *dir = fs.back();
-    if (ld != 0) // 检查孩子文件的大小是不是超过限制了
-    {
-        if (dir->dir_size > ld)
-            return false;
-    }
-    if (lr != 0) // 检查后代文件的总和是不是超过了限制
-    {
-        if (dir->child_size > lr)
-            return false;
-    }
+    struct dfile *dir = p;
+    if (ld && dir->dir_size > ld) // 检查孩子文件的大小是不是超过限制了
+        return false;
+    if (lr && dir->child_size > lr) // 检查后代文件的总和是不是超过了限制
+        return false;
     dir->child_limit = lr;
     dir->dir_limit = ld;
     return true;
@@ -206,39 +137,28 @@ int main()
     // freopen("1.txt", "r", stdin);
     int n;
     cin >> n;
-    // 初始化根目录
-    root.type = 1;
 
     for (int i = 0; i < n; i++)
     {
-        string type;
-        cin >> type;
+        string type, file_path;
+        cin >> type >> file_path;
+        vector<string> path = split(file_path, "/");
         if (type == "C")
         {
-            string file_path;
             long long file_size;
-            cin >> file_path >> file_size;
-            if (deal_creat(file_path, file_size))
-                cout << "Y" << endl;
-            else
-                cout << "N" << endl;
+            cin >> file_size;
+            cout << (deal_creat(path, file_size) ? "Y" : "N") << endl;
         }
         if (type == "R")
         {
-            string file_path;
-            cin >> file_path;
-            if (deal_remove(file_path))
-                cout << "Y" << endl;
+            deal_remove(path);
+            cout << "Y" << endl;
         }
         if (type == "Q")
         {
-            string file_path;
             long long ld, lr;
-            cin >> file_path >> ld >> lr;
-            if (deal_q(file_path, ld, lr))
-                cout << "Y" << endl;
-            else
-                cout << "N" << endl;
+            cin >> ld >> lr;
+            cout << (deal_q(path, ld, lr) ? "Y" : "N") << endl;
         }
     }
     return 0;
